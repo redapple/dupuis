@@ -1,0 +1,16 @@
+[paths]
+source =
+   src/dupuis
+   */site-packages/dupuis
+
+[run]
+branch = true
+source =
+    dupuis
+    tests
+parallel = true
+
+[report]
+show_missing = true
+precision = 2
+omit = *migrations*
