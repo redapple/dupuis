@@ -27,7 +27,7 @@ def load_json(filepath):
 
 
 MatchingDocumentPair = collections.namedtuple('MatchingDocumentPair',
-                                              ['doc_a', 'doc_b', 'distance', 'common_tokens', 'text_a', 'text_b'])
+                                              ['doc_a', 'doc_b', 'distance', 'common_tokens', 'text_a', 'text_b', 'match'])
 
 def match(source_a, source_b, ngram_range=(1, 1), token_pattern=r"(?u)\b\S+\b"):
     vectorizer = TfidfVectorizer(ngram_range=ngram_range, token_pattern=token_pattern)
@@ -50,9 +50,13 @@ def match(source_a, source_b, ngram_range=(1, 1), token_pattern=r"(?u)\b\S+\b"):
         return common_tokens
 
     row_ind, col_ind = linear_sum_assignment(distances)
+    match_threshold = 0.5
     for i, j in zip(row_ind, col_ind):
-        yield MatchingDocumentPair(source_a[i], source_b[j], distances[(i,j)], _common_tokens(i, j),
-                                   texts_a[i], texts_b[j])
+        distance = distances[(i,j)]
+        yield MatchingDocumentPair(doc_a=source_a[i], doc_b=source_b[j],
+                                   distance=distance, common_tokens=_common_tokens(i, j),
+                                   text_a=texts_a[i], text_b=texts_b[j],
+                                   match=bool(distance < match_threshold))
 
 
 app = Sanic("Dupuis")
