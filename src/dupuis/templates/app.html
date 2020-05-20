@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Matching records</title>
+
+    <!-- Load required Bootstrap and BootstrapVue CSS -->
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap/dist/css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
+
+    <script src="//polyfill.io/v3/polyfill.min.js?features=es2015%2CIntersectionObserver" crossorigin="anonymous"></script>
+
+    <script src="//cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+    <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
+    <script src="//unpkg.com/vue-text-highlight@2.0.10/dist/vue-text-highlight.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<div id="app">
+    <div class="container-fluid">
+        <div class="row">
+            <b-form-input v-model="file1" placeholder="Enter first JSON file with records"></b-form-input>
+            <b-form-input v-model="file2" placeholder="Enter second JSON file with records"></b-form-input>
+            <b-button v-on:click="requestMatches">Compare</b-button>
+        </div>
+        <div class="row">
+            <div class="col-2">
+                <b-row>
+                    <b-col>
+                        <label for="columns">Enabled columns</label>
+                        <b-form-select id="columns" multiple
+                                       :select-size="availableColumns.length"
+                                       v-model="enabledColumns"
+                                       :options="availableColumns"
+                                       @change="requestMatches"></b-form-select>
+                    </b-col>
+                </b-row>
+            </div>
+            <div class="col-10">
+                <b-row>
+                <table class="table table-striped table-bordered">
+                    <thead class="thead-dark">
+                        <th class="col-2">Distance</th>
+                        <th class="col-5">Doc A</th>
+                        <th class="col-5">Doc B</th>
+                    </thead>
+                    <tbody>
+                    <tr v-for="recordPair in recordPairs">
+                        <td class="col-2">{{ recordPair.distance }}</td>
+                        <td class="col-5">
+                            <text-highlight :queries="recordPair.common_tokens">{{ recordPair.text_a }}</text-highlight>
+                        </td>
+                        <td class="col-5">
+                            <text-highlight :queries="recordPair.common_tokens">{{ recordPair.text_b }}</text-highlight>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                </b-row>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    //import TextHighlight from 'https://www.unpkg.com/vue-text-highlight@2.0.10/dist/vue-text-highlight.min.js';
+    Vue.component("text-highlight", VueTextHighlight.default);
+    new Vue({
+        el: '#app',
+        data () {
+            return {
+                file1: "",
+                file2: "",
+                searchQuery: "",
+                recordPairs: [],
+                availableColumns: [],
+                enabledColumns: []
+            }
+        },
+        mounted () {
+            this.requestMatches()
+        },
+        methods: {
+            requestMatches: function() {
+                axios
+                    .get('/match', {
+                        params: {
+                            file1: this.file1,
+                            file2: this.file2,
+                            columns: this.enabledColumns,
+                        }
+                    })
+                    .then(response => {
+                        this.recordPairs = response.data.bestMatches;
+                        this.availableColumns = response.data.availableColumns;
+                        this.enabledColumns = response.data.enabledColumns;
+                    })
+            }
+        }
+    })
+</script>
+</body>
+</html>
